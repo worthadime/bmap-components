@@ -48,6 +48,16 @@ export type {
   ITrackProgressState,
 } from './components/track-player/types';
 
+// 点位信息窗
+export { PointInfoWindow } from './components/point-info-window/PointInfoWindow';
+export { usePointInfoWindow } from './components/point-info-window/use-point-info-window';
+export type {
+  IPointInfoWindowProps,
+  IUsePointInfoWindowParams,
+  IUsePointInfoWindowResult,
+  IPointInfoWindowOptions,
+} from './components/point-info-window/types';
+
 // 数据契约
 export type {
   ILngLat,

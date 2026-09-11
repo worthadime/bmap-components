@@ -186,6 +186,43 @@ function TrackLayer({ ctx, track }: { ctx: IMapViewContext; track: ITrackData })
 - `infoWindow: (ctx) => html` 在标记处展示信息窗（返回 HTML 字符串，`ctx` 含当前轨迹点与实时插值坐标），默认关闭
 - 倍速 `setSpeed(multiplier)` 在基础速度 `speed`（默认 1000 米/秒）上相乘；`totalDuration` 为 1 倍速总时长（秒）
 
+### 点位信息窗（React 渲染）
+
+```tsx
+import { useState } from 'react';
+import { MapView, usePointLayer, PointInfoWindow, vehiclePointPreset, type IMapPoint, type IMapViewContext } from '@worthadime/bmap-components';
+
+function PointLayerWithInfo({ ctx, points }: { ctx: IMapViewContext; points: IMapPoint[] }) {
+  const [selected, setSelected] = useState<IMapPoint | null>(null);
+
+  usePointLayer({
+    map: ctx.map,
+    points,
+    preset: vehiclePointPreset,
+    onPointClick: setSelected, // 点位 → 信息窗
+  });
+
+  return (
+    <PointInfoWindow map={ctx.map} point={selected} onClose={() => setSelected(null)}>
+      {(p) => (
+        <div style={{ padding: 12, fontFamily: 'inherit' }}>
+          <strong>{p.label ?? p.id}</strong>
+          <div>状态：{p.status ?? '--'}</div>
+          <div>速度：{p.speed ?? '--'} km/h</div>
+          <button onClick={() => console.log('查看详情', p.payload)}>详情</button>
+        </div>
+      )}
+    </PointInfoWindow>
+  );
+}
+```
+
+- 受控组件：`point` 为 `null` 时关闭；用户关闭（按钮 / 点击地图）经 `onClose` 通知，使用方应将 `point` 置回 `null`
+- 内容为 React 渲染（`createPortal` 进 BMapGL InfoWindow 容器），render-prop 形式拿到当前 `IMapPoint`；事件、状态、任意组件库卡片可直接使用
+- 同 id 且同坐标的点位数据刷新（如轮询）不重开信息窗，React 内容自动更新；坐标变化则重开
+- `width`（默认 320）、`offset`（默认 `[0, -24]` 配 48px 中心锚定图标）、`enableAutoPan`（默认开）、`enableCloseOnClick`（默认开）可调；同一地图同时只显示一个信息窗（BMapGL 限制）
+- `usePointInfoWindow` 为其内部 Hook，返回 `container` 元素，高级场景可自建 portal
+
 ## API 一览
 
 ### 初始化与加载器
@@ -210,6 +247,8 @@ function TrackLayer({ ctx, track }: { ctx: IMapViewContext; track: ITrackData })
 | `shipPointPreset` | 船舶点位预设：`sailing` / `anchored` / `abnormal` / `offline`，默认无标签 |
 | `useTrackLine(params)` | 轨迹图层 Hook：`map`、`track`、`line`、`planLine`、`endpoints`、`fitView`、`onNodeClick`、`onEventClick`。实际轨迹（红色箭头纹理，可点击）+ 计划轨迹（绿色箭头纹理，纯展示）+ 起终点与事件标记，数据变更自动重建并自适应视野 |
 | `useTrackPlayer(params)` | 轨迹回放 Hook（LuShu 路书）：`map`、`track`、`speed`、`marker`、`infoWindow`、`autoView`、`onProgress`、`onStatusChange`。返回 `status` / `index` / `progress` / `currentPoint` / `speed` / `totalDuration` 与 `play` / `pause` / `stop` / `seekToIndex` / `seekToCoordinate` / `setSpeed` 受控命令 |
+| `<PointInfoWindow>` | 点位信息窗组件（React 渲染）：`map`、`point`（受控，null 关闭）、`children`（render-prop 拿当前点位）、`width`、`offset`、`enableAutoPan`、`enableCloseOnClick`、`onClose`。`createPortal` 渲染进 BMapGL InfoWindow |
+| `usePointInfoWindow(params)` | PointInfoWindow 内部 Hook，返回 `container` 元素（createPortal 目标），高级场景自建 portal |
 
 ### 数据契约（类型）
 
@@ -221,6 +260,7 @@ function TrackLayer({ ctx, track }: { ctx: IMapViewContext; track: ITrackData })
 | `IMapViewProps` / `IMapViewContext` / `IUsePointLayerParams` / `IPointLayerPreset` | 组件参数类型 |
 | `IUseTrackLineParams` / `ITrackLineStyle` / `ITrackEndpointsOptions` | 轨迹图层参数类型 |
 | `IUseTrackPlayerParams` / `IUseTrackPlayerResult` / `ITrackPlayerStatus` / `ITrackMarkerOptions` / `ITrackPlayerInfoCtx` / `ITrackProgressState` | 轨迹回放参数与返回类型 |
+| `IPointInfoWindowProps` / `IUsePointInfoWindowParams` / `IUsePointInfoWindowResult` / `IPointInfoWindowOptions` | 点位信息窗参数类型 |
 | `calcAdaptiveZoom(width, baseZoom)` | 自适应缩放工具：`baseZoom + log2(width / 1920)`，clamp 到 `[3, 20]` |
 
 ## 自托管脚本与 CSP
@@ -281,7 +321,8 @@ pnpm build && npm pack   # 产出 worthadime-bmap-components-0.1.0.tgz
 - [x] BMapGL / MapVGL / LuShu 加载器（自包含 + 沙箱兼容）
 - [x] TrackLine 轨迹图层（实际轨迹 + 计划轨迹 + 事件点）
 - [x] TrackPlayer 轨迹回放（基于 LuShu，受控进度 / 跳转 / 倍速）
-- [ ] PointInfoWindow 点位信息窗（React 渲染）
+- [x] PointInfoWindow 点位信息窗（React 渲染）
+- [ ] 更多预设与主题（船舶轨迹、事件图标扩展）
 
 ## License
 

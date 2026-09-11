@@ -1,7 +1,7 @@
 {
   "name": "@worthadime/bmap-components",
   "version": "0.1.0",
-  "description": "数据驱动的百度地图（BMapGL）React 组件库：地图容器、点位聚合、轨迹展示与轨迹回放",
+  "description": "数据驱动的百度地图（BMapGL）React 组件库：地图容器、点位聚合、轨迹展示、轨迹回放与点位信息窗",
   "keywords": [
     "baidu-map",
     "bmapgl",
@@ -10,7 +10,8 @@
     "map",
     "cluster",
     "track",
-    "track-playback"
+    "track-playback",
+    "info-window"
   ],
   "homepage": "https://github.com/worthadime/bmap-components#readme",
   "repository": {

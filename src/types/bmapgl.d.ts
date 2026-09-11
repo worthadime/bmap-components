@@ -36,6 +36,8 @@ declare namespace BMapGL {
     removeNormalLayer(layer: unknown): void;
     /** 调整视野以包含给定点位 */
     setViewport(points: Point[]): void;
+    /** 打开信息窗（同一地图同时只显示一个） */
+    openInfoWindow(infoWindow: InfoWindow, point: Point): void;
   }
 
   class Size {
@@ -70,6 +72,23 @@ declare namespace BMapGL {
     constructor(options: Record<string, unknown>);
     setData(data: unknown): void;
     addEventListener(type: string, handler: (e: ILineLayerEvent) => void): void;
+  }
+
+  /** 信息窗（content 支持 HTML 字符串或 DOM 元素；同一地图同时只显示一个） */
+  class InfoWindow {
+    constructor(
+      content: string | HTMLElement,
+      options?: {
+        width?: number;
+        height?: number;
+        title?: string;
+        enableAutoPan?: boolean;
+        enableCloseOnClick?: boolean;
+        offset?: Size;
+      },
+    );
+    close(): void;
+    addEventListener(type: string, handler: (e: unknown) => void): void;
   }
 
   /** LineLayer 点击事件（dataIndex 为 -1 表示未命中数据项） */
