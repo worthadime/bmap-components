@@ -29,6 +29,14 @@ export type {
   ILabelOptions,
 } from './components/point-layer/types';
 
+// 轨迹图层
+export { useTrackLine } from './components/track-line/use-track-line';
+export type {
+  IUseTrackLineParams,
+  ITrackLineStyle,
+  ITrackEndpointsOptions,
+} from './components/track-line/types';
+
 // 数据契约
 export type {
   ILngLat,

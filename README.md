@@ -103,6 +103,39 @@ usePointLayer({
 });
 ```
 
+### 轨迹图层（实际 + 计划 + 事件点）
+
+```tsx
+import { useTrackLine, type ITrackData } from '@worthadime/bmap-components';
+
+const track: ITrackData = {
+  points: [
+    { lng: 116.404, lat: 39.915, time: '2026-09-11 08:00:00', speed: 62 },
+    { lng: 116.484, lat: 39.948, time: '2026-09-11 08:32:00', speed: 55 },
+    { lng: 116.554, lat: 39.982, time: '2026-09-11 09:05:00', speed: 48 },
+  ],
+  planPoints: [{ lng: 116.404, lat: 39.915 }, { lng: 116.560, lat: 39.990 }],
+  events: [
+    { id: 'e1', type: 'park', lng: 116.484, lat: 39.948, startTime: '08:32', duration: 600, description: '停留 10 分钟' },
+  ],
+};
+
+function TrackLayer({ ctx }: { ctx: IMapViewContext }) {
+  useTrackLine({
+    map: ctx.map,
+    track,
+    onNodeClick: (point) => console.log('点击轨迹节点', point),
+    onEventClick: (event) => console.log('点击事件', event),
+  });
+  return null;
+}
+```
+
+- 实际轨迹为红色箭头纹理线（点击返回最近轨迹点）；`line: false` 关闭，`line: { color, weight, texture }` 自定义
+- 计划轨迹为绿色箭头纹理线（纯展示不参与拾取）；`planLine: false` 关闭
+- 起终点与事件标记默认开启（`endpoints: false` 关闭）；内置 `park`（停车）/ `offline`（离线）/ `yaw`（偏航）图标，其余事件类型渲染橙色圆点
+- `fitView`（默认开）在数据变更后自动调整视野包含全部轨迹点
+
 ## API 一览
 
 ### 初始化与加载器
@@ -125,6 +158,7 @@ usePointLayer({
 | `usePointLayer(params)` | 点位图层 Hook：`map`、`points`、`preset`、`statusMap`、`cluster`、`label`、`onPointClick` |
 | `vehiclePointPreset` | 车辆点位预设：`driving`（绿）/ `stopped`（黄）/ `offline`（灰），行驶点位标签附速度 |
 | `shipPointPreset` | 船舶点位预设：`sailing` / `anchored` / `abnormal` / `offline`，默认无标签 |
+| `useTrackLine(params)` | 轨迹图层 Hook：`map`、`track`、`line`、`planLine`、`endpoints`、`fitView`、`onNodeClick`、`onEventClick`。实际轨迹（红色箭头纹理，可点击）+ 计划轨迹（绿色箭头纹理，纯展示）+ 起终点与事件标记，数据变更自动重建并自适应视野 |
 
 ### 数据契约（类型）
 
@@ -132,8 +166,9 @@ usePointLayer({
 |------|------|
 | `IMapPoint` | 点位：`id`、`longitude`、`latitude`、`status?`、`icon?`、`label?`、`speed?`、`payload?` |
 | `IPointStatusMap` | 状态映射：`Record<string, { icon?; color; text? }>`，未命中状态回退到预设默认样式 |
-| `ITrackPoint` / `ITrackEvent` / `ITrackData` / `ITrackSummary` | 轨迹数据契约（轨迹组件将在后续版本发布） |
+| `ITrackPoint` / `ITrackEvent` / `ITrackData` / `ITrackSummary` | 轨迹数据契约（`useTrackLine` 消费） |
 | `IMapViewProps` / `IMapViewContext` / `IUsePointLayerParams` / `IPointLayerPreset` | 组件参数类型 |
+| `IUseTrackLineParams` / `ITrackLineStyle` / `ITrackEndpointsOptions` | 轨迹图层参数类型 |
 | `calcAdaptiveZoom(width, baseZoom)` | 自适应缩放工具：`baseZoom + log2(width / 1920)`，clamp 到 `[3, 20]` |
 
 ## 自托管脚本与 CSP
@@ -191,7 +226,7 @@ pnpm build && npm pack   # 产出 worthadime-bmap-components-0.1.0.tgz
 - [x] MapView 地图容器（纯 JSAPI，自适应缩放）
 - [x] PointLayer 点位图层（聚合 / 气泡 / 标签，车辆与船舶预设）
 - [x] BMapGL / MapVGL / LuShu 加载器（自包含 + 沙箱兼容）
-- [ ] TrackLine 轨迹图层（实际轨迹 + 计划轨迹 + 事件点）
+- [x] TrackLine 轨迹图层（实际轨迹 + 计划轨迹 + 事件点）
 - [ ] TrackPlayer 轨迹回放（基于 LuShu，受控进度）
 - [ ] PointInfoWindow 点位信息窗（React 渲染）
 

@@ -28,6 +28,51 @@ declare namespace BMapGL {
     /** 容器尺寸变化后重算（如弹窗/全屏/画中画切换） */
     resize(): void;
     destroy(): void;
+    /** 叠加覆盖物（Marker / Polyline 等） */
+    addOverlay(overlay: unknown): void;
+    removeOverlay(overlay: unknown): void;
+    /** 添加/移除普通图层（LineLayer 等） */
+    addNormalLayer(layer: unknown): void;
+    removeNormalLayer(layer: unknown): void;
+    /** 调整视野以包含给定点位 */
+    setViewport(points: Point[]): void;
+  }
+
+  class Size {
+    constructor(width: number, height: number);
+  }
+
+  class Icon {
+    constructor(src: string, size?: Size);
+  }
+
+  /** 地图覆盖物公共事件接口 */
+  interface IOverlayEventTarget {
+    addEventListener(type: string, handler: (e: unknown) => void): void;
+  }
+
+  /** 标注（图标点） */
+  class Marker implements IOverlayEventTarget {
+    constructor(point: Point, options?: Record<string, unknown>);
+    addEventListener(type: string, handler: (e: unknown) => void): void;
+  }
+
+  /** 折线（计划轨迹等纯展示线） */
+  class Polyline {
+    constructor(points: Point[], options?: Record<string, unknown>);
+  }
+
+  /** 线图层（实际轨迹；options 完整结构见百度开放平台 LineLayer 文档） */
+  class LineLayer {
+    constructor(options: Record<string, unknown>);
+    setData(data: unknown): void;
+    addEventListener(type: string, handler: (e: ILineLayerEvent) => void): void;
+  }
+
+  /** LineLayer 点击事件（dataIndex 为 -1 表示未命中数据项） */
+  interface ILineLayerEvent {
+    latLng?: { lng: number; lat: number };
+    value?: { dataIndex?: number; dataItem?: unknown };
   }
 }
 
