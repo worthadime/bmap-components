@@ -136,6 +136,56 @@ function TrackLayer({ ctx }: { ctx: IMapViewContext }) {
 - 起终点与事件标记默认开启（`endpoints: false` 关闭）；内置 `park`（停车）/ `offline`（离线）/ `yaw`（偏航）图标，其余事件类型渲染橙色圆点
 - `fitView`（默认开）在数据变更后自动调整视野包含全部轨迹点
 
+### 轨迹回放（useTrackPlayer + useTrackLine 联动）
+
+```tsx
+import { useRef } from 'react';
+import { useTrackPlayer } from '@worthadime/bmap-components';
+
+function PlayerBar({ ctx, track }: { ctx: IMapViewContext; track: ITrackData }) {
+  const barRef = useRef<HTMLDivElement>(null);
+  const player = useTrackPlayer({
+    map: ctx.map,
+    track,
+    onProgress: ({ percent }) => {
+      // 高频回调：直接写 DOM，避免 setState 重渲染链
+      if (barRef.current) barRef.current.style.width = `${percent}%`;
+    },
+  });
+
+  return (
+    <div className="playback-bar">
+      <button onClick={player.stop}>⏮ 复位</button>
+      <button onClick={player.play}>▶ 播放</button>
+      <button onClick={player.pause}>⏸ 暂停</button>
+      <select value={player.speed} onChange={(e) => player.setSpeed(Number(e.target.value))}>
+        {[1, 5, 10, 20].map((s) => <option key={s} value={s}>{s}x</option>)}
+      </select>
+      <button onClick={() => player.seekToIndex(0)}>回到起点</button>
+      <div className="track"><div ref={barRef} className="fill" /></div>
+    </div>
+  );
+}
+
+// 与 useTrackLine 联动：点击轨迹节点跳转回放位置
+function TrackLayer({ ctx, track }: { ctx: IMapViewContext; track: ITrackData }) {
+  const player = useTrackPlayer({ map: ctx.map, track });
+  useTrackLine({
+    map: ctx.map,
+    track,
+    onNodeClick: (point) => player.seekToCoordinate({ lng: point.lng, lat: point.lat }),
+  });
+  return null;
+}
+```
+
+- 无 UI 设计：Hook 只负责 LuShu 路书实例生命周期与受控状态，播放控制条由使用方自绘
+- 进度以 LuShu 内部轨迹点索引为准（rAF 轮询同步），`status` 为 `INITIAL / PLAYING / PAUSED / FINISHED`；已播完时再次 `play()` 自动从头重播
+- `seekToIndex(index)` / `seekToCoordinate(coord)`（吸附最近轨迹点）跳转后自动暂停；`onProgress` 高频触发，回调内建议直接写 DOM 或用 ref，避免 setState
+- 移动标记默认内置车辆行驶图标并随方向旋转（优先取 `ITrackPoint.direction`）；`marker: { icon, width, height, rotation }` 自定义
+- `infoWindow: (ctx) => html` 在标记处展示信息窗（返回 HTML 字符串，`ctx` 含当前轨迹点与实时插值坐标），默认关闭
+- 倍速 `setSpeed(multiplier)` 在基础速度 `speed`（默认 1000 米/秒）上相乘；`totalDuration` 为 1 倍速总时长（秒）
+
 ## API 一览
 
 ### 初始化与加载器
@@ -159,6 +209,7 @@ function TrackLayer({ ctx }: { ctx: IMapViewContext }) {
 | `vehiclePointPreset` | 车辆点位预设：`driving`（绿）/ `stopped`（黄）/ `offline`（灰），行驶点位标签附速度 |
 | `shipPointPreset` | 船舶点位预设：`sailing` / `anchored` / `abnormal` / `offline`，默认无标签 |
 | `useTrackLine(params)` | 轨迹图层 Hook：`map`、`track`、`line`、`planLine`、`endpoints`、`fitView`、`onNodeClick`、`onEventClick`。实际轨迹（红色箭头纹理，可点击）+ 计划轨迹（绿色箭头纹理，纯展示）+ 起终点与事件标记，数据变更自动重建并自适应视野 |
+| `useTrackPlayer(params)` | 轨迹回放 Hook（LuShu 路书）：`map`、`track`、`speed`、`marker`、`infoWindow`、`autoView`、`onProgress`、`onStatusChange`。返回 `status` / `index` / `progress` / `currentPoint` / `speed` / `totalDuration` 与 `play` / `pause` / `stop` / `seekToIndex` / `seekToCoordinate` / `setSpeed` 受控命令 |
 
 ### 数据契约（类型）
 
@@ -169,6 +220,7 @@ function TrackLayer({ ctx }: { ctx: IMapViewContext }) {
 | `ITrackPoint` / `ITrackEvent` / `ITrackData` / `ITrackSummary` | 轨迹数据契约（`useTrackLine` 消费） |
 | `IMapViewProps` / `IMapViewContext` / `IUsePointLayerParams` / `IPointLayerPreset` | 组件参数类型 |
 | `IUseTrackLineParams` / `ITrackLineStyle` / `ITrackEndpointsOptions` | 轨迹图层参数类型 |
+| `IUseTrackPlayerParams` / `IUseTrackPlayerResult` / `ITrackPlayerStatus` / `ITrackMarkerOptions` / `ITrackPlayerInfoCtx` / `ITrackProgressState` | 轨迹回放参数与返回类型 |
 | `calcAdaptiveZoom(width, baseZoom)` | 自适应缩放工具：`baseZoom + log2(width / 1920)`，clamp 到 `[3, 20]` |
 
 ## 自托管脚本与 CSP
@@ -201,6 +253,7 @@ Blob URL 注入要求 CSP 允许 `script-src blob:`。若无法满足，请改�
 ## 注意事项
 
 - `usePointLayer` 的 `points`、`statusMap`、`cluster`、`label` 变更会**整体重建图层**（与源业务实现语义一致）。高频更新点位时请对数据做节流；`statusMap` / `cluster` / `label` 等 options 对象请用 `useMemo` 保持稳定引用，避免每次渲染都重建。
+- `useTrackLine` / `useTrackPlayer` 同理：`track`、`line`、`marker` 等 options 对象请用 `useMemo` 保持稳定引用，变更会整体重建；各类回调（`onNodeClick` / `onEventClick` / `onProgress` / `onStatusChange` / `infoWindow`）以 ref 持有，变化不触发重建。
 - `<MapView>` 的 `center` / `zoom` 变更走增量更新（`setCenter` / `setZoom`），不会重建地图实例。
 - 包以 `sideEffects: false` 发布，支持 tree-shaking；但 `initBMapSDK()` 是命令式 API，请在入口显式调用。
 
@@ -227,7 +280,7 @@ pnpm build && npm pack   # 产出 worthadime-bmap-components-0.1.0.tgz
 - [x] PointLayer 点位图层（聚合 / 气泡 / 标签，车辆与船舶预设）
 - [x] BMapGL / MapVGL / LuShu 加载器（自包含 + 沙箱兼容）
 - [x] TrackLine 轨迹图层（实际轨迹 + 计划轨迹 + 事件点）
-- [ ] TrackPlayer 轨迹回放（基于 LuShu，受控进度）
+- [x] TrackPlayer 轨迹回放（基于 LuShu，受控进度 / 跳转 / 倍速）
 - [ ] PointInfoWindow 点位信息窗（React 渲染）
 
 ## License

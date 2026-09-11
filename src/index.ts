@@ -37,6 +37,17 @@ export type {
   ITrackEndpointsOptions,
 } from './components/track-line/types';
 
+// 轨迹回放
+export { useTrackPlayer } from './components/track-player/use-track-player';
+export type {
+  IUseTrackPlayerParams,
+  IUseTrackPlayerResult,
+  ITrackPlayerStatus,
+  ITrackMarkerOptions,
+  ITrackPlayerInfoCtx,
+  ITrackProgressState,
+} from './components/track-player/types';
+
 // 数据契约
 export type {
   ILngLat,

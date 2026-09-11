@@ -55,6 +55,9 @@ declare namespace BMapGL {
   class Marker implements IOverlayEventTarget {
     constructor(point: Point, options?: Record<string, unknown>);
     addEventListener(type: string, handler: (e: unknown) => void): void;
+    setIcon(icon: Icon): void;
+    setPosition(point: Point): void;
+    setRotation(rotation: number): void;
   }
 
   /** 折线（计划轨迹等纯展示线） */
@@ -103,17 +106,42 @@ declare namespace mapvgl {
 }
 
 declare namespace BMapGLLib {
-  /** 路书（轨迹回放）实例，公开 API 面；第二批 TrackPlayer 组件会细化 */
+  /** 路书（轨迹回放）实例公开 API 面（含轨迹回放消费的内部成员） */
   interface ILuShuInstance {
     start(): void;
     stop(): void;
     pause(): void;
+    /** 当前轨迹点索引（可读写：seek 后需手动同步，vendor 内部经 setPosition 精确匹配回填） */
+    i: number;
+    /** 定位到指定坐标（内部按坐标精确匹配回填索引） */
+    setPosition(targetPos: BMapGL.Point): void;
+    /** 倍速：speed = originSpeed × times */
+    updateSpeed(speedTimes: number): void;
+    /** 播放总时长（秒，含 expPointLen 附加时长） */
+    calcTotalDuration(expPointLen: number): number;
+    /** 方向旋转钩子（可覆写为使用 ITrackPoint.direction） */
+    setRotation(prePos: BMapGL.Point, curPos: BMapGL.Point, targetPos: BMapGL.Point, direction: string | null): void;
+    /** 从地图移除全部 marker（主 marker + 左右装饰副本） */
+    removeMarker(): void;
+    /** 主体 marker 与左右装饰副本（rotation 同步需要） */
+    _marker?: { setRotation(rotation: number): void };
+    _markerL?: { setRotation(rotation: number): void };
+    _markerR?: { setRotation(rotation: number): void };
   }
 
   type TLuShuConstructor = new (
     map: BMapGL.Map,
     path: BMapGL.Point[],
-    options?: Record<string, unknown>,
+    options?: {
+      /** 信息窗内容：字符串，或 (pos, realPos, address) => HTML 字符串；空字符串隐藏信息窗 */
+      defaultContent?: string | ((pos: BMapGL.Point, realPos: BMapGL.Point, address: string) => string);
+      autoView?: boolean;
+      icon?: BMapGL.Icon;
+      /** 基础速度 米/秒 */
+      speed?: number;
+      enableRotation?: boolean;
+      landmarkPois?: Array<{ lng: number; lat: number; html: string; pauseTime: number; bShow?: boolean }>;
+    },
   ) => ILuShuInstance;
 
   const LuShu: TLuShuConstructor;
