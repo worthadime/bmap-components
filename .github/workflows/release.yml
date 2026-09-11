@@ -1,0 +1,35 @@
+# 发布流水线：打 v* tag 触发，经 npm Trusted Publishing（OIDC）发布
+#
+# 前置条件（只需配置一次，详见 README「发布」章节）：
+#   1. npm 官网将包与 GitHub 仓库绑定为 Trusted Publisher（无需在 CI 存任何 token）
+#   2. 首版本若包名尚未存在，需先本地 npm publish 一次建立包名
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  id-token: write # OIDC：Trusted Publishing 必需
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: npx publint
+      # --provenance 生成构建溯源声明，npm 页面展示"由可信 CI 构建"标识
+      - run: npm publish --provenance --access public

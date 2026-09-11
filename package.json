@@ -1,0 +1,69 @@
+{
+  "name": "@worthadime/bmap-components",
+  "version": "0.1.0",
+  "description": "数据驱动的百度地图（BMapGL）React 组件库：地图容器、点位聚合、轨迹展示与轨迹回放",
+  "keywords": [
+    "baidu-map",
+    "bmapgl",
+    "mapvgl",
+    "react",
+    "map",
+    "cluster",
+    "track",
+    "track-playback"
+  ],
+  "homepage": "https://github.com/worthadime/bmap-components#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/worthadime/bmap-components.git"
+  },
+  "bugs": "https://github.com/worthadime/bmap-components/issues",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint:package": "publint",
+    "prepublishOnly": "pnpm run build && publint"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-dom": ">=17.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "publint": "^0.3.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsup": "^8.3.5",
+    "typescript": "^5.6.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
